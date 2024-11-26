@@ -32,27 +32,45 @@ equipos_filtrados = df_operaciones[
     #{"id": "OP3", "inicio": datetime(2024, 12, 4, 15, 30), "fin": datetime(2024, 12, 4, 17, 0)},
     #{"id": "OP4", "inicio": datetime(2024, 12, 4, 14, 0), "fin": datetime(2024, 12, 4, 16, 0)}]
     
-
+'''
 def generar_planificaciones(operaciones):
   planificaciones = []  # Lista de quirófanos con operaciones asignadas
     
-    for op in sorted(operaciones, key=lambda x: x["inicio"]):
-        asignado = False
-        for quir in planificaciones:
+  for op in sorted(operaciones, key=lambda x: x["Hora inicio "]):
+       asignado = False
+       for quir in planificaciones:
             # Si la operación no se solapa, se asigna al quirófano actual
-            if all(op["inicio"] >= q["fin"] or op["fin"] <= q["inicio"] for q in quir):
+            if all(op["Hora inicio "] >= q["Hora fin"] or op["Hora fin"] <= q["Hora inicio "] for q in quir):
                 quir.append(op)
                 asignado = True
                 break
         
-        if not asignado:
-            # Si no se puede asignar, abre un nuevo quirófano
-            planificaciones.append([op])
-    
-    return planificaciones
+            if not asignado:
+                # Si no se puede asignar, abre un nuevo quirófano
+                planificaciones.append([op])
+       return planificaciones
 
 # Generar planificaciones
-resultados = generar_planificaciones(operaciones)
+
+resultados = generar_planificaciones(equipos_filtrados)
+'''
+
+#hay que ordenar operaciones 
+
+def nueva_planificacion(operaciones, costes):  #dataframes con operac ordenadas
+    #objectivo es generar un conjunto de planificacion K
+    quirofanos = costes.index
+    K = { q: set() for q in quirofanos } #vamos a poner las operaciones de cada uno
+    tiempos = {}  #quiro: ocupado hasta d
+    for codigo,op in operaciones.iterrows():
+        
+    
+    
+    
+
+
+
+'''
 
 # Mostrar resultados
 for idx, quir in enumerate(resultados):
@@ -62,7 +80,7 @@ for idx, quir in enumerate(resultados):
 
 
 
-
+'''
 
 
 
@@ -96,4 +114,4 @@ for i in equipos_medicos.index:
     problema += lp.lpSum(B_ik[(i, k)] * y[k] for j in ZAPATILLA) >= 1
 
 
-    
+'''  
