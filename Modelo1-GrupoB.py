@@ -18,4 +18,19 @@ quirofanos = df_costes.index
 
 # Los costes se encuentran en la matriz de costes y se filtran al llamar al conjunto de cardiologia pediatrica
 
+problema = lp.LpProblem("Entrega 3 Modelo 1", lp.LpMinimize)
 
+#Definir las variables
+x = lp.LpVariable.dicts("x", [(i,j) for i in equipos_medicos for j in quirofanos], lowBound = 0, cat = lp.LpBinary)
+
+#Funcion objetivo
+problema += lp.lpSum(df_costes[(i,j)]*x[(i,j)] for i in equipos_medicos for j in quirofanos)
+
+#Restriccion 1
+for i in equipos_medicos:
+    problema += lp.lpSum(x[(i,j)] for j in quirofanos) >= 1
+    
+#Restriccion 2
+for i in equipos_medicos:
+    for j in quirofanos: 
+        problema += lp.lpSum(x[(h,j)] for h in L) + x[(i,j)] <= 1
