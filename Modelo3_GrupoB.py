@@ -4,6 +4,7 @@ Created on Tue Dec  3 13:06:41 2024
 
 import pulp as lp
 import numpy as np
+import pandas as pd
 
 def generar_columna(problema, operaciones, conflictos, y, x):
     
@@ -46,6 +47,34 @@ x = []  # Variables que indican si una operación se asigna a un quirófano espe
 # Inicialmente no conocemos cuántas columnas (planificaciones de quirófano) necesitaremos
 # Por lo tanto, comenzaremos con una solución inicial factible (una planificación para cada operación)
 
+
+
+
+archivo = "241204_datos_operaciones_programadas.xlsx"  # Reemplaza con la ruta de tu archivo Excel
+df = pd.read_excel(archivo)
+
+# Crear la matriz de conflictos
+num_operaciones = len(df)
+matriz_conflictos = [[0] * num_operaciones for _ in range(num_operaciones)]
+
+# Obtener las horas de inicio y fin
+for i in range(num_operaciones):
+    inicio_i = df.loc[i, 'Hora inicio']
+    fin_i = df.loc[i, 'Hora fin']
+    
+    for j in range(i + 1, num_operaciones):  # Solo comparar operaciones posteriores para evitar duplicados
+        inicio_j = df.loc[j, 'Hora inicio']
+        fin_j = df.loc[j, 'Hora fin']
+        
+        # Comprobar si las operaciones se solapan
+        if (inicio_i < fin_j) and (inicio_j < fin_i):  # Si se solapan, hay conflicto
+            matriz_conflictos[i][j] = 1
+            matriz_conflictos[j][i] = 1  # El conflicto es bidireccional
+
+# Mostrar la matriz de conflictos
+print("Matriz de Conflictos:")
+for fila in matriz_conflictos:
+    print(fila)
 
 """ PROBLEMA: NO VAMOS A IR UNO POR UNO DEFINIENDO LOS CONFLICTOS ENTRE LAS OPERACIONES
 
