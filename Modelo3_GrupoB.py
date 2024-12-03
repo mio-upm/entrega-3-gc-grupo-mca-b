@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 Created on Tue Dec  3 13:06:41 2024
 """
@@ -10,9 +8,9 @@ import numpy as np
 def generar_columna(problema, operaciones, conflictos, y, x):
     
     # Generar una nueva columna (planificación de quirófano) utilizando el método de pricing
-    nueva_y = lp.LpVariable(f"y_{len(y)}", cat="Binary")
+    nueva_y = lp.LpVariable("y", cat="Binary")
     y.append(nueva_y)
-    nueva_x = [lp.LpVariable(f"x_{i}_{len(y) - 1}", cat="Binary") for i in range(len(operaciones))]
+    nueva_x = [lp.LpVariable("x", cat="Binary") for i in range(len(operaciones))]
     for i in range(len(operaciones)):
         if len(x) <= i:
             x.append([])
@@ -63,9 +61,6 @@ conflictos = [
 ]
 
 """
-
-
-
 
 # Función objetivo:
 problema += lp.lpSum(y)     
