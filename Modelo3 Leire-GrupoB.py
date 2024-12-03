@@ -55,6 +55,9 @@ y = lp.LpVariable.dicts('y', [j for j in range(num_quirofanos)], cat = lp.LpInte
 
 # Crear el problema
 problema = lp.LpProblem("Minimizar Quirófanos", lp.LpMinimize)
+
+#Función objetivo
+problema += lp.lpSum(y[j] for j in range(num_quirofanos))
   
 #Restriccion 1
 
@@ -69,13 +72,19 @@ for i in range(1, num_operaciones):
         
 #Restriccion 3
 
-
-
 for codigo, conflictos in L.items():
     operacion_a = operaciones.index(codigo)
     for operacion_b in range(len(conflictos)):
         for j in range(1,num_quirofanos):
             problema += x[(operacion_a, j)] + x[(operacion_b, j)] <= 1
+            
+# Resolver el problema
+problema.solve()
+
+# Resultados
+print("Estado del modelo:", lp.LpStatus[problema.status])
+print("Número mínimo de quirófanos utilizados:", sum(lp.value(y[j]) for j in range(num_quirofanos)))
+            
 
     
 
