@@ -124,3 +124,4 @@ for v in problema.variables():
         print("Var: ",v.name," Valor: ",v.varValue )
 print(count)
 
+
