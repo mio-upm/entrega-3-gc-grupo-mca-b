@@ -38,19 +38,19 @@ def generar_columna(problema, operaciones, conflictos, y, x):
 
 
 
-# Definición del problema: 
-problema = lp.LpProblem("Min_numero_quirofanos", lp.LpMinimize)
+# PARÁMETROS:
 
-# Definición de variables:
-y = []  # Variables que indican si un quirófano está siendo utilizado
-x = []  # Variables que indican si una operación se asigna a un quirófano específico
-# Inicialmente no conocemos cuántas columnas (planificaciones de quirófano) necesitaremos
-# Por lo tanto, comenzaremos con una solución inicial factible (una planificación para cada operación)
+""" PROBLEMA: CUANTAS OPERACIONES HACEMOS, CUALES SON??
 
+# Definir operaciones
+num_operaciones = 5
+operaciones = [i for i in range(num_operaciones)]
+"""
+    
 
-
-
-archivo = "241204_datos_operaciones_programadas.xlsx"  # Reemplaza con la ruta de tu archivo Excel
+# DESDE AQUI VA BENE ---------------------------
+  
+archivo = "241204_datos_operaciones_programadas.xlsx"  
 df = pd.read_excel(archivo)
 
 # Crear la matriz de conflictos
@@ -59,11 +59,11 @@ matriz_conflictos = [[0] * num_operaciones for _ in range(num_operaciones)]
 
 # Obtener las horas de inicio y fin
 for i in range(num_operaciones):
-    inicio_i = df.loc[i, 'Hora inicio']
+    inicio_i = df.loc[i, 'Hora inicio ']    
     fin_i = df.loc[i, 'Hora fin']
     
     for j in range(i + 1, num_operaciones):  # Solo comparar operaciones posteriores para evitar duplicados
-        inicio_j = df.loc[j, 'Hora inicio']
+        inicio_j = df.loc[j, 'Hora inicio ']
         fin_j = df.loc[j, 'Hora fin']
         
         # Comprobar si las operaciones se solapan
@@ -71,30 +71,29 @@ for i in range(num_operaciones):
             matriz_conflictos[i][j] = 1
             matriz_conflictos[j][i] = 1  # El conflicto es bidireccional
 
-# Mostrar la matriz de conflictos
 print("Matriz de Conflictos:")
 for fila in matriz_conflictos:
     print(fila)
+    
+# HASTA AQUI VA BENE ---------------------------
 
-""" PROBLEMA: NO VAMOS A IR UNO POR UNO DEFINIENDO LOS CONFLICTOS ENTRE LAS OPERACIONES
 
-# Definir operaciones y conflictos
-num_operaciones = 5
-operaciones = [i for i in range(num_operaciones)]
-conflictos = [
-    [1],        # Operación 0 en conflicto con operación 1
-    [0, 2],     # Operación 1 en conflicto con operaciones 0 y 2
-    [1],        # Operación 2 en conflicto con operación 1
-    [],         # Operación 3 sin conflictos
-    [3]         # Operación 4 en conflicto con operación 3
-]
 
-"""
+# PROBLEMA: 
+problema = lp.LpProblem("Min_numero_quirofanos", lp.LpMinimize)
 
-# Función objetivo:
+# VARIABLES:
+y = []  # Variables que indican si un quirófano está siendo utilizado
+x = []  # Variables que indican si una operación se asigna a un quirófano específico
+# Inicialmente no conocemos cuántas columnas (planificaciones de quirófano) necesitaremos
+# Por lo tanto, comenzaremos con una solución inicial factible (una planificación para cada operación)
+
+
+
+# FOBJ:
 problema += lp.lpSum(y)     
 
-# Restricciones
+# RESTRICCIONES
     # Restricción: cada operación debe ser asignada a al menos un quirófano
     for i in range(num_operaciones):
         problema += lp.lpSum(x[i][k] for k in range(len(y))) == 1
@@ -111,15 +110,17 @@ problema += lp.lpSum(y)
                 problema += x[i][k] + x[j][k] <= 1
 
 
+
 # Generar la primera columna para iniciar con una solución factible
 generar_columna(problema, operaciones, conflictos, y, x)
+
 
 
 problema.solve()
 print("Estado de la solución: ")
 lp.LpStatus[problema.Status]
 
-# Resultados
+# RESULTADOS
 num_quirofanos_utilizados = sum([lp.value(y[k]) for k in range(len(y))])
 print("Número mínimo de quirófanos necesarios: " num_quirofanos_utilizados)
 
