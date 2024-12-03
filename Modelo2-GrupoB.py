@@ -63,7 +63,10 @@ def nueva_planificacion(operaciones, costes):  #dataframes con operac ordenadas
     K = { q: set() for q in quirofanos } #vamos a poner las operaciones de cada uno
     tiempos = {}  #quiro: ocupado hasta d
     for codigo,op in operaciones.iterrows():
-        
+        # asigna operacion al primero quirofano disponible
+        # monitora que quirofano esta libre (t inicio > tiempos[q])
+        # guarda en K -> guarda numero op o conjunto 0/1 ?
+        # actualiza tiempos para Q
     
     
     
