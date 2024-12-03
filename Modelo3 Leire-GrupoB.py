@@ -48,7 +48,10 @@ for codigo_a, a in df_operaciones.iterrows():
                 
 #Definir variables 
 x = lp.LpVariable.dicts('x', [(i,j) for i in range(1,num_operaciones) for j in range(1,num_quirofanos)], cat = lp.LpInteger)
+# x es una variable binaria que asigna 1 si la operacion i se realiza en el quirofano j
 y = lp.LpVariable.dicts('y', [j for j in range(1,num_quirofanos)], cat = lp.LpInteger)
+# y es una variable binaria que asigna 1 si el quirofano j se utiliza y 0 si no se utiliza
+
 
 # Crear el problema
 problema = lp.LpProblem("Minimizar Quirófanos", lp.LpMinimize)
