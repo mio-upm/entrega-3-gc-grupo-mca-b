@@ -36,25 +36,17 @@ def generar_columna(problema, operaciones, conflictos, y, x):
             for k in range(len(y)):
                 problema += x[i][k] + x[j][k] <= 1
 
-
+# DESDE AQUI VA BENE ---------------------------
 
 # PARÁMETROS:
 
-""" PROBLEMA: CUANTAS OPERACIONES HACEMOS, CUALES SON??
-
-# Definir operaciones
-num_operaciones = 5
-operaciones = [i for i in range(num_operaciones)]
-"""
-    
-
-# DESDE AQUI VA BENE ---------------------------
-  
 archivo = "241204_datos_operaciones_programadas.xlsx"  
-df = pd.read_excel(archivo)
+df = pd.read_excel(archivo)    
+
+num_operaciones = len(df)
+operaciones = [i for i in range(num_operaciones)]
 
 # Crear la matriz de conflictos
-num_operaciones = len(df)
 matriz_conflictos = [[0] * num_operaciones for _ in range(num_operaciones)]
 
 # Obtener las horas de inicio y fin
@@ -94,35 +86,35 @@ x = []  # Variables que indican si una operación se asigna a un quirófano espe
 problema += lp.lpSum(y)     
 
 # RESTRICCIONES
-    # Restricción: cada operación debe ser asignada a al menos un quirófano
-    for i in range(num_operaciones):
-        problema += lp.lpSum(x[i][k] for k in range(len(y))) == 1
-    
-    # Restricción: si una operación está en un quirófano, ese quirófano está siendo utilizado
-    for i in range(num_operaciones):
+# Restricción: cada operación debe ser asignada a al menos un quirófano
+for i in range(num_operaciones):
+    problema += lp.lpSum(x[i][k] for k in range(len(y))) == 1
+
+# Restricción: si una operación está en un quirófano, ese quirófano está siendo utilizado
+for i in range(num_operaciones):
+    for k in range(len(y)):
+        problema += x[i][k] <= y[k]
+
+# Restricción: operaciones conflictivas no pueden estar en el mismo quirófano
+for i in range(num_operaciones):
+    for j in matriz_conflictos[i]:
         for k in range(len(y)):
-            problema += x[i][k] <= y[k]
-    
-    # Restricción: operaciones conflictivas no pueden estar en el mismo quirófano
-    for i in range(num_operaciones):
-        for j in conflictos[i]:
-            for k in range(len(y)):
-                problema += x[i][k] + x[j][k] <= 1
+            problema += x[i][k] + x[j][k] <= 1
 
 
 
 # Generar la primera columna para iniciar con una solución factible
-generar_columna(problema, operaciones, conflictos, y, x)
+generar_columna(problema, operaciones, matriz_conflictos, y, x)
 
 
 
 problema.solve()
-print("Estado de la solución: ")
-lp.LpStatus[problema.Status]
+print("Estado de la solución: ", lp.LpStatus[problema.status])
+
 
 # RESULTADOS
 num_quirofanos_utilizados = sum([lp.value(y[k]) for k in range(len(y))])
-print("Número mínimo de quirófanos necesarios: " num_quirofanos_utilizados)
+print("Número mínimo de quirófanos necesarios: ", num_quirofanos_utilizados)
 
 for i in range(len(x)):
     for k in range(len(x[i])):
@@ -131,7 +123,7 @@ for i in range(len(x)):
 
 # Continuar generando columnas hasta encontrar la solución óptima
 while True:
-    generar_columna(problema, operaciones, conflictos, y, x)
+    generar_columna(problema, operaciones, matriz_conflictos, y, x)
     problema.solve()
     print(f"Estado de la solución: {problema.status}")
     if problema.status != 1:  # Si el estado no es óptimo, detener el algoritmo
