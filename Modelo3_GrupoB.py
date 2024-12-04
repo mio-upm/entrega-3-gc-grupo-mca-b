@@ -1,7 +1,13 @@
+# -*- coding: utf-8 -*-
 """
-Created on Tue Dec  3 13:06:41 2024
+Created on Wed Dec  4 13:34:26 2024
+
+@author: marta
 """
 
+<<<<<<< HEAD
+
+=======
 import pandas as pd
 import pulp as lp
 from datetime import datetime, timedelta
@@ -9,76 +15,172 @@ from datetime import datetime, timedelta
 df_costes = pd.read_excel("241204_costes.xlsx", index_col = 0)
 df_operaciones = pd.read_excel("241204_datos_operaciones_programadas.xlsx", index_col = 0)
 
-#%%
-def conflictos(df_operaciones):
-    # Crear el diccionario de incompatibilidades
-    L = {x: set() for x in df_operaciones.index}
+#%% NUEVA PLANIFICACIÓN
 
-    # Iterar por las filas para calcular incompatibilidades
-    n = 0
-    for codigo_a, a in df_operaciones.iterrows():
-        a_inicio = a['Hora inicio ']
-        a_fin = a['Hora fin']
-        n += 1
-
-        for num in range(n, len(df_operaciones)):
-            b = df_operaciones.iloc[num, :]
-            b_inicio = b['Hora inicio ']
-            b_fin = b['Hora fin']
-            codigo_b = df_operaciones.index[num]
-
-            # Comparar horarios para determinar incompatibilidad
-            if a_inicio <= b_inicio:
-                if a_fin > b_inicio:  # Incompatible
-                    L[codigo_a].add(codigo_b)
-                    L[codigo_b].add(codigo_a)
-            else:
-                if b_fin > a_inicio:  # Incompatible
-                    L[codigo_a].add(codigo_b)
-                    L[codigo_b].add(codigo_a)
-    return L
-
-
-def problema_dual(operaciones, precio_sombra):
-    # buscamos generacion de combinacion de operaciones
-    #precio_sombra = diccionario { operacion: precioS    }
-    #operaciones = dataFrame de operaciones
+#variante de modelo 2, con dos parametros más: lista de quirofanos en input + el ultimo q ha salido de la generacion de columnas
+def nueva_planificacion(operaciones, costes, quirofanos_input, ultimo="Quirófano 1"):  #dataframes con operac ordenadas
+    # version de nueva_p donde ya tenemos los quirofanos selecionados (la funcion dual nos devuelve una lista de quirof utilizados) 
+    #objectivo es generar un conjunto de planificacion K factible
     
-    incompatibles = conflictos(operaciones) #diccionario con cada ope y su incompatibles
-    num_operaciones = len(operaciones)  #finales
-    codigos = operaciones.index.tolist() #los codigos de las operaciones
-    W=1 #longitud
+    #hay q comenzar desde el quirofano nuevo tb?
+    val_inicio = quirofanos_input.index(ultimo)  #pasado como input
+    quirofanos = quirofanos_input[val_inicio,:]+ quirofanos_input[:,val_inicio]
     
-    problema = lp.LpProblem("Entrega 3 Modelo dual", lp.LpMaximize)
-    y = lp.LpVariable.dicts("y",[f for f in range(num_operaciones)], lowBound=0, cat="Integer") #todavia relajado
-     
-    #funcion objectivo
-    problema += lp.lpSum(y[f]* precio_sombra[codigos[f]] for f in num_operaciones)   
     
-    #restricciones
-    problema += lp.lpSum(operaciones[i] * y[i] for i in num_operaciones ) <= W   # factibles
-    
+    K = { q: [] for q in quirofanos } #vamos a poner las operaciones de cada uno
+    activados = []  #quirofanos activados
+    num_activados = 0
+    for codigo,op in operaciones.iterrows():
+        t_inicio = op["Hora inicio "]
+        t_fin = op["Hora fin"]
+        # asigna operacion al primero quirofano disponible
+        asignado = False
+
+        i=0
+        while i < len(activados) and not asignado:
+            quiro = activados[i]
+            if K[quiro][-1][2] <= t_inicio:
+               #libre
+               asignado = True
+               K[quiro].append( (codigo, t_inicio, t_fin) )
+            else: i+=1
         
-    for cod, confl in incompatibles.items(): #para cada operacion en el dic de incompatibles
-        operacion_a = codigos.index[cod] #saco posicion f
-        for operacion_b in range(len(confl)): 
-            problema += y[operacion_a] + y[operacion_b] <= W
+        if not asignado: #nuevo
+            asignado = True
+            quiro = quirofanos[num_activados]
+            K[quiro] = [ (codigo, t_inicio, t_fin) ]
+            activados.append(quiro)
+            num_activados+=1
+    return K
+
+
+
+#%% GENERACIÓN DE COLUMNAS
+
+#hay q sacar precios sombra de funcion primal
+
+def generacion_columnas(precio_sombra,      )
+
+
+
+
+
+
+
+
+
+
+
+
+'''
+>>>>>>> 5a5892149a96aad7674bf4ecd7aac46cb261f7ff
+import pulp as lp
+import numpy as np
+import pandas as pd
+
+
+df_costes = pd.read_excel("241204_costes.xlsx", index_col = 0)
+df_operaciones = pd.read_excel("241204_datos_operaciones_programadas.xlsx", index_col = 0)
+
+
+
+
+#MAESTRO
+
+#INDICES
+
+# q : Quirófanos (p)
+quirofanos = df_costes.index
+
+# op: Operaciones (finales)
+operaciones= df_operaciones.index
+
+#PARÁMETROS
+
+#demanda final de operaciones = 1, queremos que la operación esté asignada por lo menos 1 vez
+
+
+#hay que crear unas planificaciones
+    # a(q,op) nos dice si la operación op se hace en el quirofano q (1 si se hace 0 si no se hace) = B_ik
+
+def planificación_inicial(operaciones, quirofanos):  #dataframes con operac ordenadas
+    #objectivo es generar un conjunto de planificacion K
+    K = { q: [] for q in quirofanos } #vamos a poner las operaciones de cada uno
+    activados = []  #quirofanos activados
+    num_activados = 0
+    for codigo,op in operaciones.iterrows():
+        t_inicio = op["Hora inicio "]
+        t_fin = op["Hora fin"]
+        # asigna operacion al primero quirofano disponible
+        asignado = False
+
+        i=0
+        while i < len(activados) and not asignado:
+            quiro = activados[i]
+            if K[quiro][-1][2] <= t_inicio:
+               #libre
+               asignado = True
+               K[quiro].append( (codigo, t_inicio, t_fin) )
+            else: i+=1
         
+        if not asignado: #nuevo
+            asignado = True
+            quiro = quirofanos[num_activados]
+            K[quiro] = [ (codigo, t_inicio, t_fin) ]
+            activados.append(quiro)
+            num_activados+=1
+    return K
+
+def B_ik(operaciones, planificaciones):
+    B_ik = {}
+    for i in operaciones.index:
+        for k in planificaciones.keys():
+            long=len(planificaciones[k])
+            lista_operaciones= [planificaciones[k][j][0] for j in range (long)]
+            if i in lista_operaciones:
+                B_ik[(i,k)] = 1 
+            else: 
+                B_ik[(i,k)] = 0
+    return B_ik
+
+
+
+def maestro(operaciones, planificaciones):
+    #Definir problema
+    problema = lp.LpProblem("Entrega 3 Modelo 3", lp.LpMinimize)
+        
+    #Definir variables 
+    y = lp.LpVariable.dicts("y", [k for k in planificaciones.keys()], cat = lp.LpBinary)
+
+    #Funcion objetivo 
+    problema += lp.lpSum(C_k[(k)]*y[(k)] for k in planificaciones.keys())
+
+    #Restriccion 1
+    for i in equipos_medicos.index:
+        problema += lp.lpSum(B_ik[(i, k)] * y[k] for k in planificaciones.keys()) >= 1
+
     problema.solve()
-    
-    f_objectivo = problema.objective()
-    lista_solver = []   #lista de tuplas de operaciones con varValue > 0
-    for v in problema.variables():
-        if v.varValue >0:
-            codigo_op = codigos.index(int(v.name.strip("y_")))
-            fecha_inicio = operaciones.at(codigo_op)["Hora inicio "]
-            fecha_fin = operaciones.at(codigo_op)["Hora fin"]
-            lista_solver.append((codigo_op, fecha_inicio, fecha_fin))
-            #print("Var: ",v.name," Valor: ",v.varValue )
-    
-    
-    
-    return f_objectivo, lista_solver
+#VARIABLES
+
+<<<<<<< HEAD
+#RESTRICCIONES
+
+#FUNCIÓN
+
+#SOLUCIÓN QUE NOS DA tenemos que sacar de aquí los precios sombra
 
 
+#GENERACIÓN DE COLUMNAS
 
+#INDICES
+# y(op): operaciones
+=======
+# Mostrar resultados finales
+num_quirofanos_utilizados = sum([lp.value(y[k]) for k in range(len(y))])
+print(f"Número mínimo de quirófanos necesarios: {num_quirofanos_utilizados}")
+for i in range(len(x)):
+    for k in range(len(x[i])):
+        if lp.value(x[i][k]) == 1:
+            print(f"Operación {i} asignada al quirófano {k}")
+'''
+>>>>>>> 5a5892149a96aad7674bf4ecd7aac46cb261f7ff
