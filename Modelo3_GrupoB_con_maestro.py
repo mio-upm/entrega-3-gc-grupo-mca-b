@@ -1,15 +1,12 @@
-# -*- coding: utf-8 -*-
 """
 Created on Wed Dec  4 13:34:26 2024
 
 @author: marta
 """
 
-
 import pulp as lp
 import numpy as np
 import pandas as pd
-
 
 df_costes = pd.read_excel("241204_costes.xlsx", index_col = 0)
 df_operaciones = pd.read_excel("241204_datos_operaciones_programadas.xlsx", index_col = 0)
@@ -26,11 +23,7 @@ operaciones= df_operaciones
 
 #PARÁMETROS
 
-#demanda final de operaciones = 1, queremos que la operación esté asignada por lo menos 1 vez
-
-
 #hay que crear unas planificaciones
-    # a(q,op) nos dice si la operación op se hace en el quirofano q (1 si se hace 0 si no se hace) = B_ik
 
 def planificación_inicial(operaciones, quirofanos):  #dataframes con operac ordenadas
     #objectivo es generar un conjunto de planificacion K
@@ -60,6 +53,11 @@ def planificación_inicial(operaciones, quirofanos):  #dataframes con operac ord
             num_activados+=1
     return K
 
+
+plani_ini= planificación_inicial(operaciones, quirofanos)
+
+
+
 def Bik(operaciones, planificaciones):
     B_ik = {}
     for i in operaciones.index:
@@ -77,6 +75,7 @@ def maestro_relajado(operaciones, planificaciones):
     #Definir problema
     problema = lp.LpProblem("Entrega 3 Modelo 3", lp.LpMinimize)
     B_ik=Bik(operaciones, planificaciones)  
+    codigos = operaciones.index.tolist()
     #Definir variables 
     x = lp.LpVariable.dicts("x", [k for k in planificaciones.keys()], lowBound=0, cat = lp.LpContinuous)
 
@@ -90,39 +89,53 @@ def maestro_relajado(operaciones, planificaciones):
     #resolución
     #ahora queremos sacar de esta función los precios sombra
     problema.solve(lp.PULP_CBC_CMD(msg=False))
-   # print(problema.solve())
-   # print([{name:c.pi} for name, c in problema.constraints.items()])
-    return problema.objective.value(), {name:c.pi for name, c in problema.constraints.items()}
+
+    num = 0
+    precios_sombra = {}
+    for name,c in problema.constraints.items():
+        precios_sombra[codigos[num]]= c.pi
+        num +=1
+
+    return problema.objective.value(), precios_sombra
 
 
 prueba= maestro_relajado(operaciones,planificación_inicial(operaciones, quirofanos))    
 
 
 #MAESTRO SIN RELAJAR
-
 def maestro(operaciones, planificaciones):
     #Definir problema
     problema = lp.LpProblem("Entrega 3 Modelo 3", lp.LpMinimize)
     B_ik=Bik(operaciones, planificaciones)  
+    codigos = operaciones.index.tolist()
     #Definir variables 
-    x = lp.LpVariable.dicts("x", [k for k in planificaciones.keys()], lowBound=0, cat = lp.LpBinary)
+    x = lp.LpVariable.dicts("x", [k for k in planificaciones.keys()], lowBound=0, cat = lp.LpInteger)
 
     #Funcion objetivo 
     problema += lp.lpSum(x[(k)] for k in planificaciones.keys())
 
     #Restriccion 1
     for i in operaciones.index:
-        problema += lp.lpSum(B_ik[(i, k)] * x[k] for k in planificaciones.keys()) >= len(operaciones)
+        problema += lp.lpSum(B_ik[(i, k)] * x[k] for k in planificaciones.keys()) >= 1
 
     #resolución
     #ahora queremos sacar de esta función los precios sombra
     problema.solve(lp.PULP_CBC_CMD(msg=False))
    # print(problema.solve())
    # print([{name:c.pi} for name, c in problema.constraints.items()])
-    variables={}
-    for v in problema.variables():
-        variables[v.name]=v.value()
-    return problema.objective.value(), variables
+   #return problema.objective.value(), {name:c.pi for name, c in problema.constraints.items()}
+   #return problema.objective.value(), [(name,c.pi) for name, c in problema.constraints.items()]
+    num = 0
+    precios_sombra = {}
+    for name,c in problema.constraints.items():
+        precios_sombra[codigos[num]]= c.pi
+        num +=1
+
+
+    return problema.objective.value()
+
+
+
 
 #GENERACIÓN DE COLUMNAS
 
@@ -165,29 +178,30 @@ def problema_dual(operaciones, precio_sombra):
     codigos = operaciones.index.tolist() #los codigos de las operaciones
     W=1 #longitud
     
-    problema = lp.LpProblem("Entrega 3 Modelo dual", lp.LpMaximize)
-    y = lp.LpVariable.dicts("y",codigos, lowBound=0, cat="Integer") #todavia relajado
+    problema_dual = lp.LpProblem("Entrega 3 Modelo dual", lp.LpMaximize)
+    y = lp.LpVariable.dicts("y",codigos, cat="Binary") #todavia relajado
      
     #funcion objectivo
-    problema += lp.lpSum(y[cod]* precio_sombra[cod] for cod in codigos)   
+    problema_dual += lp.lpSum(y[cod]* precio_sombra[cod] for cod in codigos)   
     
     #restricciones   
 
     for i in codigos:
         for j in incompatibles[i]:
-            problema+= y[i]+y[j]<=W
+            problema_dual+= y[i]+y[j]<=W
         
         
-    problema.solve(lp.PULP_CBC_CMD(msg=False))
+    problema_dual.solve(lp.PULP_CBC_CMD(msg=False))
     
-    f_objectivo = problema.objective.value()
+    f_objectivo = problema_dual.objective.value()
     lista_solver = []   #lista de tuplas de operaciones con varValue > 0
-    for v in problema.variables():
+    for v in problema_dual.variables():
         if v.varValue >0:
             codigo_op = v.name.strip("y_")
-            fecha_inicio = operaciones.loc[codigo_op,"Hora inicio "]
-            fecha_fin = operaciones.loc[codigo_op,"Hora fin"]
-            lista_solver.append((codigo_op, fecha_inicio, fecha_fin))
+            #fecha_inicio = operaciones.loc[codigo_op,"Hora inicio "]
+            #fecha_fin = operaciones.loc[codigo_op,"Hora fin"]
+            #lista_solver.append((codigo_op, fecha_inicio, fecha_fin))
+            lista_solver.append((codigo_op))
             #print("Var: ",v.name," Valor: ",v.varValue )
     
     
@@ -203,32 +217,40 @@ planificaciones=planificación_inicial(operaciones, quirofanos)
 
 #condición de parar fobj de generacion columnas <= 1 
 
-
-while fobj_generacion>1:
+num_iteraciones=0
+iter_max=10
+while num_iteraciones< iter_max and fobj_generacion>1:
     #resolver el maestro relajado con una planificacion
-    
+    num_iteraciones+=1
     #sacar el precio sombra
 
     sol_maestro, precio_sombra = maestro_relajado(operaciones, planificaciones)
-    dict_precio_sombra={}
-    
-    i=0   
-    for k, v in precio_sombra.items():
-        dict_precio_sombra[operaciones.index[i]]=v
-        i+=1
 
 #crear nueva f obj para generación de columnas y actualizar fobj 
-
-    fobj_generacion, nueva_planif= problema_dual(operaciones, dict_precio_sombra)
-
+    fobj_generacion, nueva_planif= problema_dual(operaciones, precio_sombra)
+    print(fobj_generacion, nueva_planif)
+    
 #poner planificaciones
     nuevo_quirofano=len(planificaciones)+1
-    planificaciones[f'Quirofano {nuevo_quirofano}']=nueva_planif
+    planificaciones['Quirofano nuevo']=nueva_planif
 
 #RESOLVEMOS MAESTRO SIN RELAJAR
 
-num_quirofanos, variables = maestro(operaciones, planificaciones)
+num_quirofanos = maestro(operaciones, planificaciones)
 
 
 print(f'Usaremos {num_quirofanos}')
+
+
+
+
+
+
+
+
+
+
+
+
+
 
