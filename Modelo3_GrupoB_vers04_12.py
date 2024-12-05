@@ -2,9 +2,11 @@
 """
 Created on Thu Dec  5 09:49:18 2024
 
-@author: GrupoB
+@author: usuario
 """
+
 import pulp as lp
+import numpy as np
 import pandas as pd
 
 df_costes = pd.read_excel("241204_costes.xlsx", index_col = 0)
@@ -13,7 +15,7 @@ df_operaciones = pd.read_excel("241204_datos_operaciones_programadas.xlsx", inde
 quirofanos = df_costes.index.tolist()
 operaciones = df_operaciones
 
-#%% CONDICIONES INICIALES
+#%%
 def planificación_inicial(operaciones, quirofanos):  #dataframes con operac ordenadas
     #objectivo es generar un conjunto de planificacion K
     K = { q: [] for q in quirofanos } #vamos a poner las operaciones de cada uno 
@@ -52,15 +54,15 @@ def planificación_inicial(operaciones, quirofanos):  #dataframes con operac ord
 def Bik(operaciones, planificaciones):
     B_ik={}
     count = 0
-    for k in planificaciones.keys(): #quirofanos
-        for i in operaciones.index: #codigo operacion
+    for k in planificaciones.keys():
+        for i in operaciones.index:
             if i in planificaciones[k]:
                 B_ik[(i,k)] = 1
                 count += 1
             else: B_ik[(i,k)]= 0
     return B_ik
 
-#%% MAESTRO RELAJADO
+#%%
 def maestro_relajado(operaciones, planificaciones):
     #Definir problema
     problema = lp.LpProblem("Entrega3_Maestro_Relajado", lp.LpMinimize)
@@ -135,39 +137,21 @@ def problema_dual(operaciones, precio_sombra, incompatibles):
         
     problema_dual.solve(lp.PULP_CBC_CMD(msg=False))
     f_objectivo = problema_dual.objective.value()
-
-    lista_solver = [v.name.split('_')[1]+" "+v.name.split('_')[2]+"-"+v.name.split('_')[3] for v in problema_dual.variables() if v.varValue > 0]
-
+    
+    lista_solver = []   #lista de tuplas de operaciones con varValue > 0
+    for v in problema_dual.variables():
+        if v.varValue >0:
+            codigo_op = v.name.strip("y_")
+            lista_solver.append((codigo_op))
+    
     return f_objectivo, lista_solver
 
-
-#%% MAESTRO SIN RELAJAR
-def maestro(operaciones, planificaciones):
-    #Definir problema
-    problema = lp.LpProblem("Entrega3_Maestro", lp.LpMinimize)
-    B_ik=Bik(operaciones, planificaciones)  
-    #Definir variables 
-    x = lp.LpVariable.dicts("x", [k for k in planificaciones.keys()], lowBound=0, cat = lp.LpInteger)
-
-    #Funcion objetivo 
-    problema += lp.lpSum(x[(k)] for k in planificaciones.keys())
-
-    #Restriccion 1
-    for i in operaciones.index:
-        problema += lp.lpSum(B_ik[(i, k)] * x[k] for k in planificaciones.keys()) >= 1
-
-    #resolución
-    problema.solve(lp.PULP_CBC_CMD(msg=False))
-
-    return problema.objective.value()
-
-
-#%% MAIN
+#%%
 planificacion= planificación_inicial(operaciones, quirofanos)
 incompatibles = conflictos(operaciones)
 
 num_iteraciones=0
-iter_max=10
+iter_max=5
 fobj_dual = 40
 
 while num_iteraciones< iter_max and fobj_dual>1:
@@ -176,16 +160,9 @@ while num_iteraciones< iter_max and fobj_dual>1:
     
     #crear nueva f obj para generación de columnas y actualizar fobj 
     fobj_dual, nueva_planif= problema_dual(operaciones, precio_sombra, incompatibles)
-    print(num_iteraciones,": ", sol_maestro, "  ", fobj_dual,"  ", nueva_planif)
-    
+    print(fobj_dual, nueva_planif)
     num_iteraciones += 1
     
     #poner planificaciones
     nuevo_quirofano=len(planificacion)+1
     planificacion['Quirofano '+str(nuevo_quirofano)]=nueva_planif
-
-#issue: como verificar quien hace que? pq creo q si usamos 94 quirofanos y tenemos 100 en diccionario, no esta bien
-
-
-sol_final = maestro(operaciones, planificacion)
-print(sol_final)
