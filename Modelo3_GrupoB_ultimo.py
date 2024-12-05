@@ -167,7 +167,7 @@ planificacion= planificación_inicial(operaciones, quirofanos)
 incompatibles = conflictos(operaciones)
 
 num_iteraciones=0
-iter_max=10
+iter_max=5 #ultima vez ha llegado hasta iteracion 23
 fobj_dual = 40
 
 while num_iteraciones< iter_max and fobj_dual>1:
@@ -184,8 +184,14 @@ while num_iteraciones< iter_max and fobj_dual>1:
     nuevo_quirofano=len(planificacion)+1
     planificacion['Quirofano '+str(nuevo_quirofano)]=nueva_planif
 
+'''
 #issue: como verificar quien hace que? pq creo q si usamos 94 quirofanos y tenemos 100 en diccionario, no esta bien
-
+monitor = { i:0 for i in operaciones.index.tolist()    }
+for quiro in planificacion.keys():
+    #check cuantas veces salen las operaciones
+    for j in planificacion[quiro]:
+        monitor[j] += 1
+'''
 
 sol_final = maestro(operaciones, planificacion)
 print(sol_final)
