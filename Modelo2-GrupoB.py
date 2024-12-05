@@ -14,8 +14,7 @@ equipos_filtrados = df_operaciones[
     (df_operaciones['Especialidad quirúrgica'] == 'Cardiología Pediátrica') |
     (df_operaciones['Especialidad quirúrgica'] == 'Cirugía Cardíaca Pediátrica') |
     (df_operaciones['Especialidad quirúrgica'] == 'Cirugía Cardiovascular') |
-    (df_operaciones['Especialidad quirúrgica'] == 'Cirugía General y del Aparato Digestivo')]
-#equipos_medicos = equipos_filtrados.loc[:,'Equipo de Cirugía']
+    (df_operaciones['Especialidad quirúrgica'] == 'Cirugía General y del Aparato Digestivo')].sort_values(by='Hora inicio ')
 
 
 # Datos de ejemplo: [id, inicio, fin]
