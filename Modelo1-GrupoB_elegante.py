@@ -73,7 +73,9 @@ count = 0
 for v in problema.variables():
     if v.varValue >0:
         count += 1
-        print('Se asigna la operación ',v.name.split('_')[1]+" "+v.name.split('_')[2]+" "+v.name.split('_')[3]+')',' al ',v.name.split('_')[4]+" "+v.name.split('_')[5])
+        ope = v.name.split('_')[1].strip("(")+" "+v.name.split('_')[2]+" "+v.name.split('_')[3].strip(",")
+        quir = v.name.split('_')[4]+" "+v.name.split('_')[5].strip(")")
+        print(f'Se asigna la operación: {ope:18s} al {quir:2s}')
 
         
 print('Se abren ',count, ' quirófanos')
