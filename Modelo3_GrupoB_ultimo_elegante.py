@@ -187,7 +187,7 @@ while num_iteraciones< iter_max and fobj_dual>1:
 
 
 sol_final,quirofanos_act = maestro(operaciones, planificacion)
-print(f'Usaremo {sol_final} quirófanos')
+print(f'Usaremos {sol_final} quirófanos')
 
 '''
 monitor = { i:[0] for i in operaciones.index.tolist()    }
